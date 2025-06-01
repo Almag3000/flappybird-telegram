@@ -2,16 +2,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>2048 Game</title>
-    <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>2048 Game</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #faf8ef; }
+    #board { width: 300px; margin: auto; display: grid; grid-template: repeat(4, 1fr) / repeat(4, 1fr); gap: 5px; }
+    .cell {
+      width: 70px; height: 70px; line-height: 70px;
+      background: #cdc1b4; font-size: 24px; font-weight: bold;
+      color: #776e65; display: flex; align-items: center; justify-content: center;
+    }
+    .tile-2    { background: #eee4da; }
+    .tile-4    { background: #ede0c8; }
+    .tile-8    { background: #f2b179; color: #f9f6f2; }
+    .tile-16   { background: #f59563; color: #f9f6f2; }
+    .tile-32   { background: #f67c5f; color: #f9f6f2; }
+    .tile-64   { background: #f65e3b; color: #f9f6f2; }
+    .tile-128  { background: #edcf72; color: #f9f6f2; }
+    .tile-256  { background: #edcc61; color: #f9f6f2; }
+    .tile-512  { background: #edc850; color: #f9f6f2; }
+    .tile-1024 { background: #edc53f; color: #f9f6f2; }
+    .tile-2048 { background: #edc22e; color: #f9f6f2; }
+  </style>
 </head>
 <body>
-    <h1>2048</h1>
-    <p class="score">Score: <span id="score">0</span></p>
-    <div id="grid-container"></div>
-    <p class="instructions">Use arrow keys or swipe to play.</p>
-    <script src="script.js"></script>
+  <h1>2048</h1>
+  <div id="score">0</div>
+  <div id="board"></div>
+  <script src="game.js"></script>
 </body>
 </html>
