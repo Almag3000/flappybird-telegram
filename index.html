@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Shifting Worlds</title>
   <script src="https://telegram.org/js/games.js"></script>
   <style>
@@ -12,6 +12,7 @@
       overflow: hidden;
       background: #000;
       height: 100%;
+      touch-action: none;
     }
     canvas {
       display: block;
@@ -19,13 +20,77 @@
       height: 100vh;
       background-color: black;
     }
+    #startScreen, #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+    #startScreen {
+      background: #000c;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      font-family: sans-serif;
+      z-index: 10;
+      pointer-events: auto;
+    }
+    #hud {
+      z-index: 5;
+      font-family: sans-serif;
+      color: white;
+      padding: 10px;
+    }
+    #hud span {
+      display: inline-block;
+      margin-right: 20px;
+    }
+    #switchBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 6;
+      padding: 10px 16px;
+      font-size: 16px;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
+<div id="startScreen">Tap to Start</div>
+<div id="hud"><span id="score">Score: 0</span><span id="timer">Time: 0</span></div>
+<button id="switchBtn">Switch World</button>
+<audio id="bgMusic" loop>
+  <source src="https://cdn.pixabay.com/download/audio/2022/07/16/audio_2f56c30967.mp3" type="audio/mpeg">
+</audio>
+<audio id="moveSound">
+  <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_bf30468c0b.mp3" type="audio/mpeg">
+</audio>
+<audio id="scoreSound">
+  <source src="https://cdn.pixabay.com/download/audio/2022/10/12/audio_c8b4baf055.mp3" type="audio/mpeg">
+</audio>
 <canvas id="game"></canvas>
 <script>
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
+  const startScreen = document.getElementById('startScreen');
+  const scoreEl = document.getElementById('score');
+  const timerEl = document.getElementById('timer');
+  const switchBtn = document.getElementById('switchBtn');
+  const bgMusic = document.getElementById('bgMusic');
+  const moveSound = document.getElementById('moveSound');
+  const scoreSound = document.getElementById('scoreSound');
+  let gameStarted = false;
+  let timer = 0;
+  let score = 0;
 
   function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -39,7 +104,6 @@
   const player = { x: 1, y: 1 };
   let world = 0;
   let isPaused = false;
-  let enemies = [];
   let currentLevel = generateLevel();
 
   function generateLevel() {
@@ -91,26 +155,80 @@
     ctx.restore();
   }
 
+  function startGame() {
+    if (gameStarted) return;
+    gameStarted = true;
+    startScreen.style.display = 'none';
+    bgMusic.volume = 0.3;
+    bgMusic.play();
+    draw();
+    setInterval(() => {
+      if (!isPaused) {
+        timer++;
+        timerEl.textContent = 'Time: ' + timer;
+      }
+    }, 1000);
+  }
+
+  startScreen.addEventListener('click', startGame);
+  startScreen.addEventListener('touchstart', startGame);
+  switchBtn.addEventListener('click', () => {
+    world = 1 - world;
+    draw();
+  });
+
   document.addEventListener('keydown', (e) => {
-    if (isPaused) return;
+    if (!gameStarted || isPaused) return;
     let dx = 0, dy = 0;
-    if (e.key === 'w') dy = -1;
-    if (e.key === 's') dy = 1;
-    if (e.key === 'a') dx = -1;
-    if (e.key === 'd') dx = 1;
-    if (e.key === 'q') {
-      world = 1 - world;
-      draw();
-      return;
+    if (e.key === 'w' || e.key === 'ArrowUp') dy = -1;
+    if (e.key === 's' || e.key === 'ArrowDown') dy = 1;
+    if (e.key === 'a' || e.key === 'ArrowLeft') dx = -1;
+    if (e.key === 'd' || e.key === 'ArrowRight') dx = 1;
+    movePlayer(dx, dy);
+  });
+
+  canvas.addEventListener('touchstart', handleTouchStart, false);
+  canvas.addEventListener('touchmove', handleTouchMove, false);
+  let xDown = null;
+  let yDown = null;
+
+  function handleTouchStart(evt) {
+    const firstTouch = evt.touches[0];
+    xDown = firstTouch.clientX;
+    yDown = firstTouch.clientY;
+  }
+
+  function handleTouchMove(evt) {
+    if (!xDown || !yDown) return;
+    const xUp = evt.touches[0].clientX;
+    const yUp = evt.touches[0].clientY;
+    const xDiff = xDown - xUp;
+    const yDiff = yDown - yUp;
+
+    if (Math.abs(xDiff) > Math.abs(yDiff)) {
+      if (xDiff > 10) movePlayer(-1, 0);
+      else if (xDiff < -10) movePlayer(1, 0);
+    } else {
+      if (yDiff > 10) movePlayer(0, -1);
+      else if (yDiff < -10) movePlayer(0, 1);
     }
+    xDown = null;
+    yDown = null;
+  }
+
+  function movePlayer(dx, dy) {
     const newX = player.x + dx;
     const newY = player.y + dy;
     if (canMove(newX, newY)) {
       player.x = newX;
       player.y = newY;
+      moveSound.currentTime = 0;
+      moveSound.play();
       if (getMap()[newY][newX] === 'E') {
-        TelegramGameProxy.score = TelegramGameProxy.score + 100 || 100;
-        TelegramGameProxy.postEvent("score", TelegramGameProxy.score);
+        score += 100;
+        scoreSound.play();
+        scoreEl.textContent = 'Score: ' + score;
+        TelegramGameProxy.postEvent("score", score);
         currentLevel = generateLevel();
         player.x = 1;
         player.y = 1;
@@ -118,7 +236,7 @@
       }
     }
     draw();
-  });
+  }
 
   function canMove(x, y) {
     const map = getMap();
@@ -126,8 +244,6 @@
     const tile = map[y][x];
     return tile !== '#';
   }
-
-  draw();
 </script>
 </body>
 </html>
