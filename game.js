@@ -1,71 +1,84 @@
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+const canvas = document.getElementById("flappy");
+const ctx = canvas.getContext("2d");
 
-let bird = { x: 50, y: 150, width: 34, height: 24, gravity: 0.25, lift: -4.6, velocity: 0 };
-let pipes = [];
-let frame = 0;
+const bird = new Image();
+const bg = new Image();
+const fg = new Image();
+const pipeUp = new Image();
+const pipeBottom = new Image();
+
+bird.src = "assets/bird.png";
+bg.src = "assets/background.png";
+fg.src = "assets/fg.png";
+pipeUp.src = "assets/pipeUp.png";
+pipeBottom.src = "assets/pipeBottom.png";
+
+const flySound = new Audio("assets/fly.wav");
+const scoreSound = new Audio("assets/score.wav");
+
+let gap = 90;
+let xPos = 10;
+let yPos = 150;
+let gravity = 1.2;
 let score = 0;
-let gameOver = false;
-let started = false;
 
-const birdImg = new Image();
-birdImg.src = 'bird.png';
-const pipeNorth = new Image();
-pipeNorth.src = 'pipe-north.png';
-const pipeSouth = new Image();
-pipeSouth.src = 'pipe-south.png';
-const flySound = new Audio('fly.wav');
-const scoreSound = new Audio('score.wav');
+document.addEventListener("keydown", moveUp);
+document.addEventListener("click", moveUp);
 
-document.addEventListener('keydown', () => {
-    if (!started) started = true;
-    if (!gameOver) {
-        bird.velocity = bird.lift;
-        flySound.play();
-    } else {
-        document.location.reload();
-    }
-});
-
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    if (started && !gameOver) {
-        bird.velocity += bird.gravity;
-        bird.y += bird.velocity;
-        if (frame % 100 === 0) {
-            const gap = 120;
-            const top = Math.floor(Math.random() * (canvas.height - gap - 100)) + 20;
-            pipes.push({ x: canvas.width, top });
-        }
-        pipes.forEach((pipe, i) => {
-            pipe.x -= 2;
-            ctx.drawImage(pipeNorth, pipe.x, pipe.top - pipeNorth.height);
-            ctx.drawImage(pipeSouth, pipe.x, pipe.top + 120);
-            if (
-                bird.x + bird.width > pipe.x &&
-                bird.x < pipe.x + pipeNorth.width &&
-                (bird.y < pipe.top || bird.y > pipe.top + 120)
-            ) {
-                gameOver = true;
-            }
-            if (pipe.x + pipeNorth.width < bird.x && !pipe.passed) {
-                score++;
-                pipe.passed = true;
-                scoreSound.play();
-            }
-        });
-    }
-
-    ctx.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
-    ctx.fillStyle = "#fff";
-    ctx.font = "24px sans-serif";
-    ctx.fillText("Score: " + score, 10, 30);
-
-    frame++;
-    if (bird.y + bird.height >= canvas.height) gameOver = true;
-    if (!gameOver) requestAnimationFrame(draw);
+function moveUp() {
+  yPos -= 30;
+  flySound.play();
 }
 
-draw();
+let pipes = [];
+pipes[0] = {
+  x: canvas.width,
+  y: 0
+};
+
+function draw() {
+  ctx.drawImage(bg, 0, 0);
+
+  for (let i = 0; i < pipes.length; i++) {
+    ctx.drawImage(pipeUp, pipes[i].x, pipes[i].y);
+    ctx.drawImage(pipeBottom, pipes[i].x, pipes[i].y + pipeUp.height + gap);
+
+    pipes[i].x--;
+
+    if (pipes[i].x == 125) {
+      pipes.push({
+        x: canvas.width,
+        y: Math.floor(Math.random() * pipeUp.height) - pipeUp.height
+      });
+    }
+
+    if (
+      xPos + bird.width >= pipes[i].x &&
+      xPos <= pipes[i].x + pipeUp.width &&
+      (yPos <= pipes[i].y + pipeUp.height ||
+        yPos + bird.height >= pipes[i].y + pipeUp.height + gap) ||
+      yPos + bird.height >= canvas.height - fg.height
+    ) {
+      location.reload();
+    }
+
+    if (pipes[i].x == 5) {
+      score++;
+      scoreSound.play();
+    }
+  }
+
+  ctx.drawImage(fg, 0, canvas.height - fg.height);
+  ctx.drawImage(bird, xPos, yPos);
+
+  yPos += gravity;
+
+  ctx.fillStyle = "#000";
+  ctx.font = "20px Verdana";
+  ctx.fillText("Score: " + score, 10, canvas.height - 20);
+
+  requestAnimationFrame(draw);
+}
+
+pipeBottom.onload = draw;

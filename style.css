@@ -1,14 +1,11 @@
 
 body {
-    margin: 0;
-    background: #70c5ce;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  margin: 0;
+  background: #70c5ce;
+  overflow: hidden;
 }
 canvas {
-    background: url('background.png') no-repeat center;
-    background-size: cover;
-    display: block;
+  display: block;
+  margin: 0 auto;
+  background: url('assets/background.png');
 }
