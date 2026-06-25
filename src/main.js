@@ -1,9 +1,12 @@
 import './styles/global.css'
 import './styles/menu.css'
+import './styles/board.css'
+import './styles/game.css'
 import { Router } from './router.js'
 import { HomeScreen } from './screens/HomeScreen.js'
 import { BotSetupScreen } from './screens/BotSetupScreen.js'
 import { OnlineScreen } from './screens/OnlineScreen.js'
+import { GameScreen } from './screens/GameScreen.js'
 
 const app = document.getElementById('app')
 const router = new Router(app)
@@ -13,23 +16,24 @@ function showHome() {
     onSelectMode(mode) {
       if (mode === 'bot')    showBotSetup()
       if (mode === 'online') showOnline()
-      if (mode === 'local')  showBotSetup('local')
+      if (mode === 'local')  showBotSetup()
     }
   }))
 }
 
-function showBotSetup(mode = 'bot') {
+function showBotSetup() {
   router.show(BotSetupScreen({
     onBack: showHome,
-    onStart(config) {
-      console.log('Start game:', config)
-      // Step 3: will navigate to GameScreen
-    }
+    onStart(config) { showGame(config) }
   }))
 }
 
 function showOnline() {
   router.show(OnlineScreen({ onBack: showHome }))
+}
+
+function showGame(config) {
+  router.show(GameScreen({ config, onBack: showHome }))
 }
 
 showHome()
