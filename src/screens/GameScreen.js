@@ -1,77 +1,289 @@
 import { Chess } from 'chess.js'
 import { Board } from '../components/Board.js'
+import { getPieceSVG } from '../components/Pieces.js'
 
-// Step 3: visual only — board renders starting position, no moves yet
+const FILES = 'abcdefgh'
+
+// Unicode symbols for captured-piece display
+const PCAP = {
+  p: { w: '♙', b: '♟' },
+  n: { w: '♘', b: '♞' },
+  b: { w: '♗', b: '♝' },
+  r: { w: '♖', b: '♜' },
+  q: { w: '♕', b: '♛' },
+}
+
 export function GameScreen({ config, onBack }) {
-  const { level, color } = config
-  const playerColor = color          // 'white' | 'black'
-  const botName = level?.label ?? 'Computer'
-  const orientation = playerColor    // board faces player's color
+  const { level, color: playerColor } = config
+  const pCode = playerColor[0]             // 'w' or 'b'
+  const oCode = pCode === 'w' ? 'b' : 'w'
+  const botLabel = level?.label ?? 'Computer'
+  const botIcon  = level?.icon  ?? '🤖'
 
-  const chess = new Chess()
+  // ── Game state ─────────────────────────────────────────────
+  const state = {
+    chess:            new Chess(),
+    selected:         null,
+    possibleMoves:    [],
+    lastMove:         [],
+    checkSquare:      null,
+    pendingPromotion: null,
+    captures:         { w: [], b: [] },   // captures[color] = types taken BY that color
+    gameOver:         false,
+    result:           null,
+  }
 
+  // ── Root element ───────────────────────────────────────────
   const el = document.createElement('div')
   el.className = 'game-screen'
 
-  function render() {
-    el.innerHTML = ''
-
-    // ── Header ──────────────────────────────────────────────
-    const header = document.createElement('div')
-    header.className = 'game-header'
-    header.innerHTML = `
+  el.innerHTML = `
+    <div class="game-header">
       <button class="btn-ghost back-btn">← Menu</button>
-      <span class="game-level-badge">${level?.icon ?? '🤖'} ${botName}</span>
-    `
-    header.querySelector('.back-btn').addEventListener('click', onBack)
+      <span class="game-level-badge">${botIcon} ${botLabel}</span>
+    </div>
+    <div class="player-info" id="g-top"></div>
+    <div class="board-container"  id="g-board"></div>
+    <div class="player-info" id="g-bottom"></div>
+    <div class="game-status"      id="g-status"></div>
+  `
+  el.querySelector('.back-btn').addEventListener('click', onBack)
 
-    // ── Opponent info ────────────────────────────────────────
-    const opponentColor = playerColor === 'white' ? 'black' : 'white'
-    const opponentInfo = playerInfo({
-      name: botName,
-      color: opponentColor,
-      isBot: true,
-      captures: [],
-    })
+  renderAll()
+  return el
 
-    // ── Board ────────────────────────────────────────────────
-    const boardContainer = document.createElement('div')
-    boardContainer.className = 'board-container'
-    const { el: boardEl } = Board({ fen: chess.fen(), orientation })
-    boardContainer.appendChild(boardEl)
+  // ── Render helpers ─────────────────────────────────────────
 
-    // ── Player info ──────────────────────────────────────────
-    const myInfo = playerInfo({
-      name: 'You',
-      color: playerColor,
-      isBot: false,
-      captures: [],
-    })
-
-    // ── Status bar ───────────────────────────────────────────
-    const status = document.createElement('div')
-    status.className = 'game-status'
-    status.textContent = playerColor === 'white' ? 'Your turn — White' : 'Waiting for bot…'
-
-    el.appendChild(header)
-    el.appendChild(opponentInfo)
-    el.appendChild(boardContainer)
-    el.appendChild(myInfo)
-    el.appendChild(status)
+  function renderAll() {
+    renderPlayers()
+    renderBoard()
+    renderStatus()
   }
 
-  render()
-  return el
-}
+  function renderPlayers() {
+    const turn = state.chess.turn()
+    // opponent captured my pieces → stored in captures[oCode]
+    // I captured opponent's pieces → stored in captures[pCode]
+    const opCapStr = state.captures[oCode].map(t => PCAP[t]?.[pCode] ?? '').join('')
+    const myCapStr = state.captures[pCode].map(t => PCAP[t]?.[oCode] ?? '').join('')
 
-function playerInfo({ name, color, isBot, captures }) {
-  const div = document.createElement('div')
-  div.className = 'player-info'
-  const king = color === 'white' ? '♔' : '♚'
-  div.innerHTML = `
-    <span class="player-king ${color}">${king}</span>
-    <span class="player-name">${name}</span>
-    <span class="player-captures">${captures.join(' ')}</span>
-  `
-  return div
+    el.querySelector('#g-top').innerHTML = playerRow({
+      symbol:  oCode === 'w' ? '♔' : '♚',
+      cls:     oCode === 'w' ? 'white' : 'black',
+      name:    botLabel,
+      caps:    opCapStr,
+      active:  !state.gameOver && turn === oCode,
+    })
+    el.querySelector('#g-bottom').innerHTML = playerRow({
+      symbol:  pCode === 'w' ? '♔' : '♚',
+      cls:     pCode === 'w' ? 'white' : 'black',
+      name:    'You',
+      caps:    myCapStr,
+      active:  !state.gameOver && turn === pCode,
+    })
+  }
+
+  function playerRow({ symbol, cls, name, caps, active }) {
+    const a = active ? ' active' : ''
+    return `
+      <span class="player-king ${cls}${a}">${symbol}</span>
+      <span class="player-name${a}">${name}</span>
+      <span class="player-captures">${caps}</span>
+    `
+  }
+
+  function renderBoard() {
+    const container = el.querySelector('#g-board')
+    container.innerHTML = ''
+    const { el: boardEl } = Board({
+      fen:         state.chess.fen(),
+      orientation: playerColor,
+      interactive: {
+        selectedSquare: state.selected,
+        possibleMoves:  state.possibleMoves,
+        lastMove:       state.lastMove,
+        checkSquare:    state.checkSquare,
+        onSquareClick:  handleSquareClick,
+      },
+    })
+    container.appendChild(boardEl)
+  }
+
+  function renderStatus() {
+    const s = el.querySelector('#g-status')
+    if (state.gameOver) { s.textContent = ''; return }
+    const turn = state.chess.turn()
+    s.textContent = state.chess.isCheck()
+      ? `${turn === 'w' ? 'White' : 'Black'} is in check!`
+      : `${turn === 'w' ? 'White' : 'Black'} to move`
+  }
+
+  // ── Click logic ────────────────────────────────────────────
+
+  function handleSquareClick(square) {
+    if (state.gameOver || state.pendingPromotion) return
+
+    const chess = state.chess
+    const piece = chess.get(square)
+    const turn  = chess.turn()
+
+    // Nothing selected yet
+    if (!state.selected) {
+      if (piece && piece.color === turn) {
+        state.selected      = square
+        state.possibleMoves = chess.moves({ square, verbose: true }).map(m => m.to)
+        renderBoard()
+      }
+      return
+    }
+
+    // A piece is selected — check if clicking a valid target
+    if (state.possibleMoves.includes(square)) {
+      const moving      = chess.get(state.selected)
+      const isPromotion = moving?.type === 'p' &&
+        ((turn === 'w' && square[1] === '8') || (turn === 'b' && square[1] === '1'))
+
+      if (isPromotion) {
+        state.pendingPromotion = { from: state.selected, to: square }
+        state.selected         = null
+        state.possibleMoves    = []
+        renderBoard()
+        showPromotionPopup(turn)
+      } else {
+        doMove({ from: state.selected, to: square })
+      }
+      return
+    }
+
+    // Click on own piece → switch selection
+    if (piece && piece.color === turn) {
+      state.selected      = square
+      state.possibleMoves = chess.moves({ square, verbose: true }).map(m => m.to)
+    } else {
+      state.selected      = null
+      state.possibleMoves = []
+    }
+    renderBoard()
+  }
+
+  // ── Execute move ───────────────────────────────────────────
+
+  function doMove(moveObj) {
+    const result = state.chess.move(moveObj)
+    if (!result) return
+
+    state.selected         = null
+    state.possibleMoves    = []
+    state.lastMove         = [result.from, result.to]
+    state.pendingPromotion = null
+
+    if (result.captured) {
+      // result.color = who moved; they captured an opponent piece
+      state.captures[result.color].push(result.captured)
+    }
+
+    // Find king square if in check (for red highlight)
+    state.checkSquare = null
+    if (state.chess.isCheck()) {
+      const t = state.chess.turn()
+      findKingSquare(t)
+    }
+
+    // Check game over
+    if (state.chess.isCheckmate()) {
+      const winner = state.chess.turn() === 'w' ? 'Black' : 'White'
+      state.gameOver = true
+      state.result   = { type: 'checkmate', winner }
+    } else if (state.chess.isStalemate()) {
+      state.gameOver = true
+      state.result   = { type: 'stalemate' }
+    } else if (state.chess.isDraw()) {
+      state.gameOver = true
+      state.result   = { type: 'draw' }
+    }
+
+    renderAll()
+    if (state.gameOver) setTimeout(showResultOverlay, 500)
+  }
+
+  function findKingSquare(color) {
+    const board = state.chess.board()
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = board[r][c]
+        if (p && p.type === 'k' && p.color === color) {
+          state.checkSquare = FILES[c] + (8 - r)
+          return
+        }
+      }
+    }
+  }
+
+  // ── Promotion popup ────────────────────────────────────────
+
+  function showPromotionPopup(color) {
+    const popup = document.createElement('div')
+    popup.className = 'promotion-popup'
+    const choices = document.createElement('div')
+    choices.className = 'promotion-choices'
+
+    for (const type of ['q', 'r', 'b', 'n']) {
+      const btn = document.createElement('button')
+      btn.className = 'promotion-choice'
+      btn.innerHTML = getPieceSVG(color, type)
+      btn.addEventListener('click', () => {
+        popup.remove()
+        doMove({ ...state.pendingPromotion, promotion: type })
+      })
+      choices.appendChild(btn)
+    }
+
+    popup.appendChild(choices)
+    el.appendChild(popup)
+  }
+
+  // ── Result overlay ─────────────────────────────────────────
+
+  function showResultOverlay() {
+    const { type, winner } = state.result
+    const myColor = pCode === 'w' ? 'White' : 'Black'
+    const iWin    = winner === myColor
+
+    const icon  = type !== 'checkmate' ? '🤝' : iWin ? '🏆' : '😔'
+    const title = type !== 'checkmate' ? 'Draw'
+                : iWin ? 'You Win!' : 'You Lose'
+    const desc  = type === 'checkmate' ? `Checkmate — ${winner} wins`
+                : type === 'stalemate' ? 'Stalemate' : 'Game drawn'
+
+    const overlay = document.createElement('div')
+    overlay.className = 'result-overlay'
+    overlay.innerHTML = `
+      <div class="result-card">
+        <div class="result-icon">${icon}</div>
+        <div class="result-title">${title}</div>
+        <div class="result-desc">${desc}</div>
+        <div class="result-actions">
+          <button class="btn-primary" id="r-again">Play Again</button>
+          <button class="btn-ghost"   id="r-menu">Menu</button>
+        </div>
+      </div>
+    `
+    overlay.querySelector('#r-again').addEventListener('click', () => {
+      overlay.remove()
+      Object.assign(state, {
+        chess:            new Chess(),
+        selected:         null,
+        possibleMoves:    [],
+        lastMove:         [],
+        checkSquare:      null,
+        pendingPromotion: null,
+        captures:         { w: [], b: [] },
+        gameOver:         false,
+        result:           null,
+      })
+      renderAll()
+    })
+    overlay.querySelector('#r-menu').addEventListener('click', onBack)
+    el.appendChild(overlay)
+  }
 }

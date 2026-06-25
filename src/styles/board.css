@@ -119,20 +119,24 @@
 
 /* ── Pieces ──────────────────────────────────────────────── */
 
+.square {
+  cursor: pointer;
+}
+
 .piece {
   width: calc(var(--sq-size) * 0.9);
   height: calc(var(--sq-size) * 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   position: relative;
   z-index: 1;
+  pointer-events: none;   /* clicks fall through to .square */
   transition: transform 0.1s ease;
 }
 
-.piece:active {
-  transform: scale(1.15);
+.square:active .piece {
+  transform: scale(1.1);
 }
 
 .piece-svg {
