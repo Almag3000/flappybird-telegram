@@ -1,0 +1,188 @@
+/* ── Board wrapper & layout ──────────────────────────────── */
+
+.board-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  user-select: none;
+}
+
+.board-row {
+  display: flex;
+  align-items: stretch;
+}
+
+/* ── Rank labels (left side, 1-8) ────────────────────────── */
+
+.board-rank-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  width: var(--label-size);
+  padding-right: 4px;
+}
+
+.board-rank-labels span {
+  font-size: calc(var(--sq-size) * 0.22);
+  color: var(--text-secondary);
+  text-align: right;
+  line-height: 1;
+  height: var(--sq-size);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* ── File labels (bottom, a-h) ───────────────────────────── */
+
+.board-file-row {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.board-label-spacer {
+  width: var(--label-size);
+  flex-shrink: 0;
+}
+
+.board-file-labels {
+  display: flex;
+  width: calc(var(--sq-size) * 8);
+}
+
+.board-file-labels span {
+  width: var(--sq-size);
+  font-size: calc(var(--sq-size) * 0.22);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* ── Board grid ──────────────────────────────────────────── */
+
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(8, var(--sq-size));
+  grid-template-rows: repeat(8, var(--sq-size));
+  border: 2px solid #111;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+}
+
+/* ── Squares ─────────────────────────────────────────────── */
+
+.square {
+  width: var(--sq-size);
+  height: var(--sq-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.sq-light { background: var(--light-square); }
+.sq-dark  { background: var(--dark-square);  }
+
+.square.highlighted-move {
+  background: var(--last-move);
+}
+
+.square.highlighted-move.sq-light { background: color-mix(in srgb, var(--light-square) 60%, #9bc700 40%); }
+.square.highlighted-move.sq-dark  { background: color-mix(in srgb, var(--dark-square)  60%, #9bc700 40%); }
+
+.square.possible-move::after {
+  content: '';
+  position: absolute;
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.square.possible-capture::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: calc(var(--sq-size) * 0.1) solid rgba(0,0,0,0.25);
+  pointer-events: none;
+}
+
+.square.in-check {
+  background: var(--check) !important;
+}
+
+.square.selected.sq-light { background: color-mix(in srgb, var(--light-square) 50%, #14551e 50%); }
+.square.selected.sq-dark  { background: color-mix(in srgb, var(--dark-square)  50%, #14551e 50%); }
+
+/* ── Pieces ──────────────────────────────────────────────── */
+
+.square {
+  cursor: pointer;
+}
+
+.piece {
+  width: calc(var(--sq-size) * 0.9);
+  height: calc(var(--sq-size) * 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  pointer-events: none;   /* clicks fall through to .square */
+  transition: transform 0.1s ease;
+}
+
+.square:active .piece {
+  transform: scale(1.1);
+}
+
+.piece-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.piece.dragging {
+  opacity: 0.4;
+}
+
+/* ── Promotion popup ─────────────────────────────────────── */
+
+.promotion-popup {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.promotion-choices {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  gap: 8px;
+  box-shadow: var(--shadow);
+}
+
+.promotion-choice {
+  width: 64px;
+  height: 64px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  transition: border-color var(--transition);
+}
+
+.promotion-choice:hover {
+  border-color: var(--accent);
+}

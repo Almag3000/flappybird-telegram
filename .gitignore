@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+.env.local
+*.local
+public/stockfish-18-lite-single.js
+public/stockfish-18-lite-single.wasm
