@@ -11,7 +11,7 @@ const PCAP  = {
 }
 
 export function GameOnlineScreen({ config, onBack }) {
-  const { color: playerColor, conn } = config
+  const { color: playerColor, conn, opponentNickname = 'Соперник' } = config
   const pCode = playerColor[0]
   const oCode = pCode === 'w' ? 'b' : 'w'
 
@@ -79,7 +79,7 @@ export function GameOnlineScreen({ config, onBack }) {
     el.querySelector('#g-top').innerHTML = playerRow({
       symbol: oCode === 'w' ? '♔' : '♚',
       cls:    oCode === 'w' ? 'white' : 'black',
-      name:   'Opponent',
+      name:   opponentNickname,
       caps:   opCapStr,
       active: !state.gameOver && turn === oCode,
     })

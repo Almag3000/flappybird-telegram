@@ -3,15 +3,23 @@ import './styles/menu.css'
 import './styles/board.css'
 import './styles/game.css'
 import './styles/online.css'
-import { Router } from './router.js'
-import { HomeScreen } from './screens/HomeScreen.js'
-import { BotSetupScreen } from './screens/BotSetupScreen.js'
+import './styles/matchmaking.css'
+import { Router }            from './router.js'
+import { HomeScreen }        from './screens/HomeScreen.js'
+import { NicknameScreen }    from './screens/NicknameScreen.js'
+import { BotSetupScreen }    from './screens/BotSetupScreen.js'
 import { OnlineSetupScreen } from './screens/OnlineSetupScreen.js'
-import { GameScreen } from './screens/GameScreen.js'
-import { GameOnlineScreen } from './screens/GameOnlineScreen.js'
+import { MatchmakingScreen } from './screens/MatchmakingScreen.js'
+import { GameScreen }        from './screens/GameScreen.js'
+import { GameOnlineScreen }  from './screens/GameOnlineScreen.js'
+import {
+  getNickname, getUserId, registerPresence, isFirebaseConfigured,
+} from './engine/Lobby.js'
 
 const app    = document.getElementById('app')
 const router = new Router(app)
+
+if (isFirebaseConfigured()) registerPresence(getUserId())
 
 function showHome() {
   router.show(HomeScreen({
@@ -19,8 +27,14 @@ function showHome() {
       if (mode === 'bot')    showBotSetup()
       if (mode === 'local')  showGame({ mode: 'local', color: 'white', level: null })
       if (mode === 'online') showOnlineSetup()
-    }
+      if (mode === 'match')  showMatchmaking()
+    },
+    onChangeNickname: showNicknameChange,
   }))
+}
+
+function showNicknameChange() {
+  router.show(NicknameScreen({ onBack: showHome, onDone: () => showHome() }))
 }
 
 function showBotSetup() {
@@ -32,10 +46,15 @@ function showBotSetup() {
 
 function showOnlineSetup() {
   router.show(OnlineSetupScreen({
-    onBack: showHome,
-    onGameReady: (config) => {
-      router.show(GameOnlineScreen({ config, onBack: showHome }))
-    },
+    onBack:      showHome,
+    onGameReady: (config) => router.show(GameOnlineScreen({ config, onBack: showHome })),
+  }))
+}
+
+function showMatchmaking() {
+  router.show(MatchmakingScreen({
+    onBack:      showHome,
+    onGameReady: (config) => router.show(GameOnlineScreen({ config, onBack: showHome })),
   }))
 }
 
@@ -43,4 +62,8 @@ function showGame(config) {
   router.show(GameScreen({ config, onBack: showHome }))
 }
 
-showHome()
+if (!getNickname()) {
+  router.show(NicknameScreen({ onDone: () => showHome() }))
+} else {
+  showHome()
+}

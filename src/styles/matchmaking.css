@@ -1,0 +1,146 @@
+/* ── Nickname screen ─────────────────────────────────────── */
+
+.nickname-logo {
+  font-size: 4rem;
+  margin-bottom: 12px;
+  animation: floatLogo 3s ease-in-out infinite;
+}
+
+.nickname-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 300px;
+  margin-bottom: 12px;
+}
+
+.nickname-input {
+  background: var(--bg-card);
+  border: 2px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 14px;
+  outline: none;
+  transition: border-color var(--transition);
+  font-family: inherit;
+}
+
+.nickname-input:focus {
+  border-color: var(--accent);
+}
+
+.nickname-input.shake {
+  animation: inputShake 0.4s ease;
+  border-color: #e05555;
+}
+
+@keyframes inputShake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-8px); }
+  60%       { transform: translateX(8px); }
+}
+
+.nickname-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* ── Matchmaking screen ───────────────────────────────────── */
+
+.mm-logo {
+  font-size: 3rem;
+  margin-bottom: 4px;
+}
+
+.mm-spinner {
+  margin: 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mm-ring {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 5px solid rgba(226,185,111,0.15);
+  border-top-color: var(--accent);
+  animation: mmSpin 0.9s linear infinite;
+}
+
+@keyframes mmSpin {
+  to { transform: rotate(360deg); }
+}
+
+.mm-sub {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 8px;
+  min-height: 1.4em;
+}
+
+/* ── Home screen additions ────────────────────────────────── */
+
+.home-user-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.home-user-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.home-change-nick {
+  font-size: 0.75rem;
+  color: var(--accent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
+}
+
+.home-change-nick:hover {
+  background: rgba(226,185,111,0.12);
+}
+
+.home-online-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 16px;
+}
+
+.online-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4caf50;
+  flex-shrink: 0;
+  animation: onlinePulse 2s ease-in-out infinite;
+}
+
+@keyframes onlinePulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* Highlight for the "Find Match" card */
+.mode-card-match {
+  border-color: rgba(226,185,111,0.3) !important;
+  background: linear-gradient(135deg, var(--bg-card), rgba(226,185,111,0.06)) !important;
+}
