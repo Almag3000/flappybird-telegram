@@ -1,4 +1,5 @@
 import Peer from 'peerjs'
+import { getNickname } from '../engine/Lobby.js'
 
 function genCode() {
   // 6 uppercase chars, no I/O/0/1 to avoid confusion
@@ -85,11 +86,16 @@ export function OnlineSetupScreen({ onBack, onGameReady }) {
 
   function handleHostConn(conn) {
     conn.on('open', () => {
-      conn.send({ type: 'start', yourColor: 'black' })
-      // disconnect from signaling only — keeps conn alive
-      try { peer?.disconnect() } catch (_) {}
-      peer = null
-      onGameReady({ mode: 'online', color: 'white', conn })
+      const myNickname = getNickname() || 'Player'
+      // Expect a hello from guest, then start the game
+      conn.on('data', msg => {
+        if (msg.type === 'hello') {
+          conn.send({ type: 'start', yourColor: 'black', opponentNickname: myNickname })
+          try { peer?.disconnect() } catch (_) {}
+          peer = null
+          onGameReady({ mode: 'online', color: 'white', conn, opponentNickname: msg.nickname || 'Opponent' })
+        }
+      })
     })
   }
 
@@ -143,12 +149,18 @@ export function OnlineSetupScreen({ onBack, onGameReady }) {
       peer.on('open', () => {
         const conn = peer.connect(peerId(c))
         conn.on('open', () => {
+          const myNickname = getNickname() || 'Player'
+          conn.send({ type: 'hello', nickname: myNickname })
           conn.on('data', (msg) => {
             if (msg.type === 'start') {
-              // disconnect from signaling only — keeps conn alive
               try { peer?.disconnect() } catch (_) {}
               peer = null
-              onGameReady({ mode: 'online', color: msg.yourColor === 'black' ? 'black' : 'white', conn })
+              onGameReady({
+                mode: 'online',
+                color: msg.yourColor === 'black' ? 'black' : 'white',
+                conn,
+                opponentNickname: msg.opponentNickname || 'Opponent',
+              })
             }
           })
         })
