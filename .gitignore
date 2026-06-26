@@ -1,7 +1,5 @@
 node_modules/
-dist/
+.DS_Store
+*.log
 .env
 .env.local
-*.local
-public/stockfish-18-lite-single.js
-public/stockfish-18-lite-single.wasm
