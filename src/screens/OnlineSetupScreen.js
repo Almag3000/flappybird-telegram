@@ -86,8 +86,10 @@ export function OnlineSetupScreen({ onBack, onGameReady }) {
   function handleHostConn(conn) {
     conn.on('open', () => {
       conn.send({ type: 'start', yourColor: 'black' })
-      cleanup()
-      onGameReady({ mode: 'online', color: 'white', conn, peer: null })
+      // disconnect from signaling only — keeps conn alive
+      try { peer?.disconnect() } catch (_) {}
+      peer = null
+      onGameReady({ mode: 'online', color: 'white', conn })
     })
   }
 
@@ -143,8 +145,10 @@ export function OnlineSetupScreen({ onBack, onGameReady }) {
         conn.on('open', () => {
           conn.on('data', (msg) => {
             if (msg.type === 'start') {
-              cleanup()
-              onGameReady({ mode: 'online', color: msg.yourColor === 'black' ? 'black' : 'white', conn, peer: null })
+              // disconnect from signaling only — keeps conn alive
+              try { peer?.disconnect() } catch (_) {}
+              peer = null
+              onGameReady({ mode: 'online', color: msg.yourColor === 'black' ? 'black' : 'white', conn })
             }
           })
         })
