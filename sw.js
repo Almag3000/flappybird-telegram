@@ -1,4 +1,4 @@
-const CACHE = "h3-freelancer-v1";
+const CACHE = "h3-freelancer-v2";
 const ASSETS = [
   "/",
   "/index.html",
