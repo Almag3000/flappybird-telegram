@@ -1,9 +1,9 @@
 const LEVELS = [
-  { id: 'beginner',     label: 'Beginner',     icon: '🌱', desc: 'Just learning',      depth: 1  },
-  { id: 'easy',         label: 'Easy',          icon: '😊', desc: 'Casual play',        depth: 3  },
-  { id: 'medium',       label: 'Medium',        icon: '🧠', desc: 'Some challenge',     depth: 6  },
-  { id: 'hard',         label: 'Hard',          icon: '💪', desc: 'Strong opponent',    depth: 10 },
-  { id: 'master',       label: 'Master',        icon: '👑', desc: 'Near perfect play',  depth: 15 },
+  { id: 'beginner', label: 'Beginner', icon: '🌱', desc: 'Just learning',     skill: 1,  moveTime: 100  },
+  { id: 'easy',     label: 'Easy',     icon: '😊', desc: 'Casual play',       skill: 5,  moveTime: 300  },
+  { id: 'medium',   label: 'Medium',   icon: '🧠', desc: 'Some challenge',    skill: 10, moveTime: 1000 },
+  { id: 'hard',     label: 'Hard',     icon: '💪', desc: 'Strong opponent',   skill: 16, moveTime: 2000 },
+  { id: 'master',   label: 'Master',   icon: '👑', desc: 'Near perfect play', skill: 20, moveTime: 5000 },
 ]
 
 export function BotSetupScreen({ onStart, onBack }) {
